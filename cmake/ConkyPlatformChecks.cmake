@@ -147,16 +147,29 @@ endif(NOT
   NOT
   OS_DARWIN)
 
-# Check for soundcard header
 if(OS_LINUX)
-  check_include_files("linux/soundcard.h" HAVE_SOME_SOUNDCARD_H)
-  check_include_files("linux/soundcard.h" HAVE_LINUX_SOUNDCARD_H)
   check_include_files("linux/sockios.h" HAVE_LINUX_SOCKIOS_H)
-elseif(OS_OPENBSD)
-  check_include_files("soundcard.h" HAVE_SOME_SOUNDCARD_H)
-else(OS_LINUX)
-  check_include_files("sys/soundcard.h" HAVE_SOME_SOUNDCARD_H)
 endif(OS_LINUX)
+
+# Handle Open Sound System
+if(BUILD_OPENSOUNDSYS)
+  if(OS_LINUX)
+    check_include_files("linux/soundcard.h" HAVE_SOUNDCARD_H)
+  elseif(OS_OPENBSD)
+    check_include_files("soundcard.h" HAVE_SOUNDCARD_H)
+    # OpenBSD (and FreeBSD?) provide emulation header that links to sndio.
+    if(HAVE_SOUNDCARD_H)
+      find_library(SNDIO_LIB
+        NAMES sndio
+        PATHS /usr/lib
+        /usr/local/lib)
+      set(conky_libs ${conky_libs} ${SNDIO_LIB})
+    endif(HAVE_SOUNDCARD_H)
+  else(OS_LINUX)
+    check_include_files("sys/soundcard.h" HAVE_SOUNDCARD_H)
+  endif(OS_LINUX)
+endif(BUILD_OPENSOUNDSYS)
+
 
 if(BUILD_I18N)
   include(FindIntl)
